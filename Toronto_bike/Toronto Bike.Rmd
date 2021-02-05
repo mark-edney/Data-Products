@@ -1,0 +1,95 @@
+---
+title: "Toronto Bike Rental"
+author: "Mark Edney"
+date: "14/01/2021"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning = FALSE)
+```
+
+## Bike Rental Shiny App
+
+This application use the data collected from the [Toronto Open Data](https://open.toronto.ca/dataset/bike-share-toronto-ridership-data/) to 
+generate a histogram of the usage of rental bikes in Toronto during the month of 
+June in 2020.
+```{r packages, results='hide'}
+install.packages("opendatatoronto", 
+                 repos = "http://cran.us.r-project.org",
+                 dependencies = TRUE)
+library(opendatatoronto)
+library(tidyverse)
+library(lubridate)
+library(shiny)
+```
+## UI
+
+There are two user inputs on the UI side:
+
+- A slider that limits the maximum and minimum of the displayed values
+- A checkbox that excludes users with a annual bike pass
+
+```{r UI, eval=FALSE}
+        sidebarPanel(
+            sliderInput("dur",
+                        "Trip Duration:",
+                        min = 0,
+                        max = 500,
+                        value = c(0,500)),
+            checkboxInput("freq",
+                        "Exclude annual users:",
+                        value = FALSE))
+```
+
+## Server
+
+```{r Serverhide, echo = FALSE}
+ # get package
+    package <- show_package("7e876c24-177c-4605-9cef-e50dd74c617f")
+    
+    # get all resources for this package
+    resources <- list_package_resources("7e876c24-177c-4605-9cef-e50dd74c617f")
+    # identify datastore resources; by default, Toronto Open Data sets datastore resource format to CSV for non-geospatial and GeoJSON for geospatial resources
+    datastore_resources <- filter(resources, tolower(format) %in% c('zip', 'geojson'))
+    # load the first datastore resource as a sample
+    data <- filter(datastore_resources, name == "Bike share ridership 2020") %>% get_resource()
+    data2 <-  data$`2020-06.csv`
+    data2[grepl("Time",names(data2))] <- 
+        lapply(data2[grepl("Time",names(data2))], parse_date_time, orders = "mdy HM")
+    data2$Dur <- as.numeric(data2$End.Time - data2$Start.Time,units="mins")
+
+```
+
+The server cleans up the data and calculates the difference in usage between annual
+pass renting versus casual pass renting.
+
+```{r servershow}
+    anni <- data2$Dur[data2$User.Type=="Annual Member"]
+    cas <- data2$Dur[data2$User.Type=="Casual Member"]
+    dif <- mean(anni) -mean(cas)
+```
+
+The server also takes the values input from the UI and applies them
+
+```{r server2, eval=FALSE}
+        minx <- input$dur[1]
+        maxx <- input$dur[2]
+        ifelse(input$freq==TRUE,
+               data <- data2[data2$User.Type == "Casual Member",],
+               data <- data2)
+```
+
+## Sample Output
+
+Here is a sample plot of the data and the difference in average usage is : `r round(dif)`
+ minutes. Casual riders are more likely to travel for a longer time then frequent
+ (annual) riders. 
+ 
+```{r output, echo=FALSE}
+        data <- data2
+        g <- ggplot(data, aes(x=Dur, fill = User.Type)) + geom_histogram() + 
+           xlim(c(0,300)) + labs(x="Trip Duration", y="Count")
+g
+```
+

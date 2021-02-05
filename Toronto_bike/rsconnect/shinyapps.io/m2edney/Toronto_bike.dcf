@@ -1,0 +1,13 @@
+name: Toronto_bike
+title: Toronto_bike
+username:
+account: m2edney
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3475167
+bundleId: 4097983
+url: https://m2edney.shinyapps.io/Toronto_bike/
+when: 1610668126.52731
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: test.R|Toronto-Bike.html|Toronto Bike.md|Toronto Bike.Rmd|Toronto Bike.Rpres|Toronto Bike-figure/unnamed-chunk-2-1.png

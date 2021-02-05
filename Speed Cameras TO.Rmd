@@ -1,0 +1,70 @@
+---
+title: "Speed Cameras in Toronto"
+author: "Mark Edney"
+date: "02/01/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, comment = "")
+```
+
+## Objective
+
+This report plots the speed cameras in the Greater Toronto Area from the data provided
+by Open Toronto which can be found [here](https://open.toronto.ca/dataset/automated-speed-enforcement-locations/).
+
+## Inialization
+
+The following code is used to inialize the required libraries.
+
+```{r packages}
+install.packages("opendatatoronto", repos = "http://cran.us.r-project.org", dependencies = TRUE)
+library(opendatatoronto)
+library(dplyr)
+library(leaflet)
+```
+
+The following code is provided by the Open Toronto site to download the dataset.
+
+```{r dataset}
+# get package
+package <- show_package("a154790c-4a8a-4d09-ab6b-535ddb646770")
+
+# get all resources for this package
+resources <- list_package_resources("a154790c-4a8a-4d09-ab6b-535ddb646770")
+
+# identify datastore resources; by default, Toronto Open Data sets datastore resource format to CSV for non-geospatial and GeoJSON for geospatial resources
+datastore_resources <- filter(resources, tolower(format) %in% c('csv', 'geojson'))
+
+# load the first datastore resource as a sample
+data <- filter(datastore_resources, row_number()==1) %>% get_resource()
+```
+## Plotting the Data
+
+The geometry in the dataset can be used directly with leaflet and the longitude and
+latitude do not need to be separated.
+
+```{r plots}
+df <- data$geometry
+```
+
+Custom icons for the speed cameras can be used with the following code:
+
+```{r icon}
+cameraicon <- makeIcon(
+        iconUrl = "https://www.flaticon.com/svg/static/icons/svg/2164/2164608.svg",
+        iconWidth = 35, iconHeight = 35
+)
+```
+
+Finally all the data and options can be passed to the leaflet function.
+
+```{r plotfinal}
+
+df %>%
+        leaflet() %>%
+        addTiles() %>%
+        addMarkers(icon = cameraicon, clusterOptions = markerClusterOptions(), popup = data$location)
+```
+
